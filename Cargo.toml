@@ -2,5 +2,6 @@
 name = "stalker"
 version = "0.1.0"
 authors = ["Yuri Vasquez <yuri.vasquez91@gmail.com>"]
+license="MIT"
 
 [dependencies]
