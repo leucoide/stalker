@@ -3,5 +3,7 @@ name = "stalker"
 version = "0.1.0"
 authors = ["Yuri Vasquez <yuri.vasquez91@gmail.com>"]
 license="MIT"
-
+description="Yet another file watcher rust library with stabilization support"
+homepage="https://github.com/leucoide/stalker"
+repository="https://github.com/leucoide/stalker"
 [dependencies]
