@@ -11,10 +11,10 @@ struct WatcherRunner {}
 impl WatcherRunner {
     fn watch(&self, watcher: &Watcher) -> events::FSEventEmitter {
         let event_emitter = events::FSEventEmitter::new();
-        let watcher_clone = watcher.clone();
+        let watcher = watcher.clone();
         let sender = event_emitter.sender.clone();
         thread::spawn(move || {
-            watcher_clone.scan(sender);
+            watcher.scan(sender);
         });
         event_emitter
     }
@@ -28,7 +28,7 @@ pub struct Watcher {
 }
 
 impl Watcher {
-    pub fn new(path: String, poll_interval: u64, growth_timeout: u64) -> Watcher {
+    pub fn new(path: &String, poll_interval: u64, growth_timeout: u64) -> Watcher {
         Watcher {
             path: PathBuf::from(path),
             poll_interval: Duration::from_millis(poll_interval),
@@ -38,28 +38,28 @@ impl Watcher {
 
     fn scan(&self, sender: Sender<events::FSEvent>) {
         let timeout = self.growth_timeout.as_secs();
-        let mut old_snapshot = snapshot::FolderSnapShot::from(self.path.clone()).unwrap();
+        let mut old_snapshot = snapshot::FolderSnapShot::from(&self.path).unwrap();
         loop {
             thread::sleep(self.poll_interval);
 
-            let new_snapshot = snapshot::FolderSnapShot::from(self.path.clone()).unwrap();
+            let new_snapshot = snapshot::FolderSnapShot::from(&self.path).unwrap();
             for new_path in new_snapshot.metadata.keys() {
                 if !old_snapshot.metadata.contains_key(new_path) {
-                    match sender.send(events::FSEvent::created(new_path.to_path_buf())) {
+                    match sender.send(events::FSEvent::Created(new_path.to_path_buf())) {
                         Ok(()) => {}
                         Err(e) => print!("Error {:?}", e),
                     }
                 } else if old_snapshot.metadata[new_path].len()
                     != new_snapshot.metadata[new_path].len()
                 {
-                    match sender.send(events::FSEvent::modified(new_path.to_path_buf())) {
+                    match sender.send(events::FSEvent::Modified(new_path.to_path_buf())) {
                         Ok(()) => {}
                         Err(e) => print!("Error {:?}", e),
                     }
-                } else if new_snapshot.is_stable(new_path.clone(), timeout)
-                    && !old_snapshot.is_stable(new_path.clone(), timeout)
+                } else if new_snapshot.is_stable(&new_path, timeout)
+                    && !old_snapshot.is_stable(&new_path, timeout)
                 {
-                    match sender.send(events::FSEvent::stabilized(new_path.to_path_buf())) {
+                    match sender.send(events::FSEvent::Stabilized(new_path.to_path_buf())) {
                         Ok(()) => {}
                         Err(e) => print!("Error {:?}", e),
                     }
@@ -67,7 +67,7 @@ impl Watcher {
             }
             for old_path in old_snapshot.metadata.keys() {
                 if !new_snapshot.metadata.contains_key(old_path) {
-                    match sender.send(events::FSEvent::deleted(old_path.to_path_buf())) {
+                    match sender.send(events::FSEvent::Deleted(old_path.to_path_buf())) {
                         Ok(()) => {}
                         Err(e) => print!("Error {:?}", e),
                     }
@@ -78,7 +78,7 @@ impl Watcher {
     }
     pub fn watch(&self) -> events::FSEventEmitter {
         let runner = WatcherRunner {};
-        runner.watch(&self)
+        runner.watch(self)
     }
 }
 

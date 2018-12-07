@@ -12,7 +12,7 @@ pub struct FolderSnapShot {
 }
 
 impl FolderSnapShot {
-    pub fn from(path: PathBuf) -> io::Result<FolderSnapShot> {
+    pub fn from(path: &PathBuf) -> io::Result<FolderSnapShot> {
         let mut snapshot = FolderSnapShot {
             path: path.clone(),
             metadata: collections::HashMap::new(),
@@ -30,7 +30,7 @@ impl FolderSnapShot {
         Ok(snapshot)
     }
 
-    pub fn is_stable(&self, path: PathBuf, timeout: u64) -> bool {
+    pub fn is_stable(&self, path: &PathBuf, timeout: u64) -> bool {
         let metadata = path.metadata().unwrap();
         let last_modify = metadata.modified().unwrap();
         self.timestamp
